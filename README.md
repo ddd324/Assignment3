@@ -4,6 +4,8 @@ SnapRead is a modern iOS reading application built with SwiftUI, designed to pro
 
 The app focuses on reading, progress tracking, and social interaction, providing a complete user-centered reading workflow.
 
+**GitHub repository link**: https://github.com/ddd324/Assignment3.git
+
 ---
 
 ## Group name
