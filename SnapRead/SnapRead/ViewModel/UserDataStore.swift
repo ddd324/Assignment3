@@ -1,7 +1,8 @@
 import Foundation
 
-// Store user-related data locally
+// Handle local storage for user-related data
 class UserDataStore {
+
     static let shared = UserDataStore()
 
     private let commentsKey = "comments"
@@ -10,12 +11,12 @@ class UserDataStore {
     private let recentKey = "recentBookKeys"
     private let chapterKey = "readingChapterIndex"
 
-    // Create a stable book identifier
+    // Create a unique key for each book
     func bookKey(_ book: Book) -> String {
         "\(book.title.lowercased())-\(book.author.lowercased())"
     }
 
-    // Create a user-specific storage key
+    // Create user-specific storage keys
     func userKey(_ base: String, username: String) -> String {
         "\(username)_\(base)"
     }
@@ -27,10 +28,14 @@ class UserDataStore {
         ) as? [String: Double] ?? [:]
 
         dict[bookKey(book)] = progress
-        UserDefaults.standard.set(dict, forKey: userKey(progressKey, username: username))
+
+        UserDefaults.standard.set(
+            dict,
+            forKey: userKey(progressKey, username: username)
+        )
     }
 
-    // Load reading progress
+    // Load saved reading progress
     func loadProgress(username: String, book: Book) -> Double {
         let dict = UserDefaults.standard.dictionary(
             forKey: userKey(progressKey, username: username)
@@ -42,7 +47,11 @@ class UserDataStore {
     // Save recently viewed books
     func saveRecentlyViewed(username: String, books: [Book]) {
         let keys = books.map { bookKey($0) }
-        UserDefaults.standard.set(keys, forKey: userKey(recentKey, username: username))
+
+        UserDefaults.standard.set(
+            keys,
+            forKey: userKey(recentKey, username: username)
+        )
     }
 
     // Load recently viewed books
@@ -59,6 +68,7 @@ class UserDataStore {
     // Save a new comment
     func saveComment(_ comment: BookComment) {
         var comments = loadAllComments()
+
         comments.insert(comment, at: 0)
 
         if let data = try? JSONEncoder().encode(comments) {
@@ -76,15 +86,20 @@ class UserDataStore {
         return comments
     }
 
-    // Load comments for one book
+    // Load comments for a specific book
     func loadComments(for book: Book) -> [BookComment] {
         let key = bookKey(book)
-        return loadAllComments().filter { $0.bookKey == key }
+
+        return loadAllComments().filter {
+            $0.bookKey == key
+        }
     }
 
     // Follow another user
     func follow(currentUser: String, targetUser: String) {
-        guard currentUser != targetUser else { return }
+        guard currentUser != targetUser else {
+            return
+        }
 
         var dict = loadFollowingDict()
         var list = dict[currentUser] ?? []
@@ -94,29 +109,49 @@ class UserDataStore {
         }
 
         dict[currentUser] = list
+
         saveFollowingDict(dict)
     }
 
-    // Unfollow a user
+    // Remove follow relationship
     func unfollow(currentUser: String, targetUser: String) {
         var dict = loadFollowingDict()
-        dict[currentUser]?.removeAll { $0 == targetUser }
+
+        dict[currentUser]?.removeAll {
+            $0 == targetUser
+        }
+
         saveFollowingDict(dict)
     }
 
-    // Check follow state
+    // Check whether current user follows target user
     func isFollowing(currentUser: String, targetUser: String) -> Bool {
         let dict = loadFollowingDict()
+
         return dict[currentUser]?.contains(targetUser) ?? false
     }
 
-    // Load followed users
+    // Load all users the current user follows
     func loadFollowingUsers(currentUser: String) -> [String] {
         let dict = loadFollowingDict()
+
         return dict[currentUser] ?? []
     }
 
-    // Load following relationships
+    // Load all followers of current user
+    func loadFollowersUsers(currentUser: String) -> [String] {
+        let dict = loadFollowingDict()
+
+        return dict
+            .filter { _, followingList in
+                followingList.contains(currentUser)
+            }
+            .map { username, _ in
+                username
+            }
+    }
+
+    // Load follow relationship dictionary
     private func loadFollowingDict() -> [String: [String]] {
         guard let data = UserDefaults.standard.data(forKey: followingKey),
               let dict = try? JSONDecoder().decode([String: [String]].self, from: data) else {
@@ -126,14 +161,14 @@ class UserDataStore {
         return dict
     }
 
-    // Save following relationships
+    // Save follow relationship dictionary
     private func saveFollowingDict(_ dict: [String: [String]]) {
         if let data = try? JSONEncoder().encode(dict) {
             UserDefaults.standard.set(data, forKey: followingKey)
         }
     }
 
-    // Save last reading chapter
+    // Save current chapter index
     func saveChapter(username: String, book: Book, chapterIndex: Int) {
         var dict = UserDefaults.standard.dictionary(
             forKey: userKey(chapterKey, username: username)
@@ -147,7 +182,7 @@ class UserDataStore {
         )
     }
 
-    // Load last reading chapter
+    // Load saved chapter index
     func loadChapter(username: String, book: Book) -> Int {
         let dict = UserDefaults.standard.dictionary(
             forKey: userKey(chapterKey, username: username)
@@ -156,9 +191,10 @@ class UserDataStore {
         return dict[bookKey(book)] ?? 0
     }
 
-    // Load user avatar
+    // Load saved user avatar
     func loadUserAvatar(username: String) -> Data? {
         let key = "user_\(username)_avatar"
+
         return UserDefaults.standard.data(forKey: key)
     }
 }

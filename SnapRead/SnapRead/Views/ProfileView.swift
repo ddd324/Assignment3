@@ -1,54 +1,53 @@
 import SwiftUI
 
-// Profile page
+// User profile page
 struct ProfileView: View {
+
     @EnvironmentObject var authViewModel: AuthViewModel
     @EnvironmentObject var bookViewModel: BookViewModel
     @EnvironmentObject var readerViewModel: ReaderViewModel
 
     @State private var myCommentCount = 0
-
-    // Following count
-    var followingCount: Int {
-        UserDataStore.shared.loadFollowingUsers(currentUser: authViewModel.username).count
-    }
-
-    // Followers count
-    var followersCount: Int {
-        UserDataStore.shared.loadAllComments()
-            .map { $0.username }
-            .filter { username in
-                UserDataStore.shared.isFollowing(
-                    currentUser: username,
-                    targetUser: authViewModel.username
-                )
-            }
-            .count
-    }
+    @State private var followingCount = 0
+    @State private var followersCount = 0
 
     var body: some View {
+
         ScrollView {
+
             VStack(spacing: 26) {
 
-                // User avatar
                 avatarView
 
-                Text(authViewModel.username.isEmpty ? "User" : authViewModel.username)
-                    .font(.title)
-                    .fontWeight(.bold)
+                Text(
+                    authViewModel.username.isEmpty
+                    ? "User"
+                    : authViewModel.username
+                )
+                .font(.title)
+                .fontWeight(.bold)
 
-                // Profile stats
                 HStack(spacing: 34) {
-                    ProfileStatView(title: "Following", value: "\(followingCount)")
-                    ProfileStatView(title: "Followers", value: "\(followersCount)")
+
+                    ProfileStatView(
+                        title: "Following",
+                        value: "\(followingCount)"
+                    )
+
+                    ProfileStatView(
+                        title: "Followers",
+                        value: "\(followersCount)"
+                    )
                 }
 
                 VStack(spacing: 0) {
 
-                    // Open My Books
                     NavigationLink {
+
                         MyBooksView()
+
                     } label: {
+
                         ProfileSummaryRow(
                             icon: "book.fill",
                             iconColor: .orange,
@@ -62,13 +61,15 @@ struct ProfileView: View {
                     Divider()
                         .padding(.leading, 76)
 
-                    // Open comments page
                     NavigationLink {
+
                         ReadersView()
                             .onAppear {
                                 readerViewModel.selectedTab = .mine
                             }
+
                     } label: {
+
                         ProfileSummaryRow(
                             icon: "text.bubble.fill",
                             iconColor: .pink,
@@ -81,19 +82,25 @@ struct ProfileView: View {
                 }
                 .padding(.vertical, 10)
                 .background(Color(.systemGray6))
-                .clipShape(RoundedRectangle(cornerRadius: 24))
+                .clipShape(
+                    RoundedRectangle(cornerRadius: 24)
+                )
 
-                // Logout button
                 Button {
+
                     authViewModel.logout()
+
                 } label: {
+
                     Text("Log Out")
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
                         .background(.red)
                         .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
+                        .clipShape(
+                            RoundedRectangle(cornerRadius: 14)
+                        )
                 }
                 .padding(.top, 14)
             }
@@ -101,22 +108,27 @@ struct ProfileView: View {
         }
         .navigationTitle("Profile")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
 
-            // Load comment count
-            loadMyCommentCount()
+        // Load profile statistics
+        .onAppear {
+            loadProfileData()
         }
     }
 
-    // Avatar view
+    // Avatar display view
     private var avatarView: some View {
+
         Group {
-            if let data = UserDataStore.shared.loadUserAvatar(username: authViewModel.username),
+
+            if let data = authViewModel.avatarData,
                let image = UIImage(data: data) {
+
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
+
             } else {
+
                 Image(systemName: "person.crop.circle.fill")
                     .resizable()
                     .scaledToFit()
@@ -128,21 +140,42 @@ struct ProfileView: View {
         .clipShape(Circle())
     }
 
-    // Count user comments
-    private func loadMyCommentCount() {
-        myCommentCount = UserDataStore.shared.loadAllComments()
-            .filter { $0.username == authViewModel.username }
+    // Refresh profile statistics
+    private func loadProfileData() {
+
+        let currentUser = authViewModel.username
+
+        myCommentCount = UserDataStore.shared
+            .loadAllComments()
+            .filter {
+                $0.username == currentUser
+            }
+            .count
+
+        followingCount = UserDataStore.shared
+            .loadFollowingUsers(
+                currentUser: currentUser
+            )
+            .count
+
+        followersCount = UserDataStore.shared
+            .loadFollowersUsers(
+                currentUser: currentUser
+            )
             .count
     }
 }
 
-// Profile stats view
+// Display profile statistic item
 struct ProfileStatView: View {
+
     let title: String
     let value: String
 
     var body: some View {
+
         VStack(spacing: 4) {
+
             Text(value)
                 .font(.title2)
                 .fontWeight(.bold)
@@ -154,8 +187,9 @@ struct ProfileStatView: View {
     }
 }
 
-// Summary row view
+// Display one summary row on profile page
 struct ProfileSummaryRow: View {
+
     let icon: String
     let iconColor: Color
     let title: String
@@ -163,10 +197,11 @@ struct ProfileSummaryRow: View {
     let subtitle: String
 
     var body: some View {
+
         HStack(spacing: 14) {
 
-            // Icon
             ZStack {
+
                 Circle()
                     .fill(iconColor.opacity(0.15))
 
@@ -176,15 +211,14 @@ struct ProfileSummaryRow: View {
             }
             .frame(width: 40, height: 40)
 
-            // Title
             Text(title)
                 .font(.subheadline)
                 .fontWeight(.medium)
 
             Spacer()
 
-            // Value info
             VStack(alignment: .trailing, spacing: 2) {
+
                 Text(value)
                     .font(.headline)
                     .fontWeight(.semibold)
