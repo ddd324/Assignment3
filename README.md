@@ -6,6 +6,12 @@ The app focuses on reading, progress tracking, and social interaction, providing
 
 ---
 
+## Group name
+
+- Code Masters
+
+---
+
 ## Features
 
 ### Book Management
